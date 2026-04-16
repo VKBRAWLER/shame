@@ -1,65 +1,113 @@
-import Image from "next/image";
+"use client";
+
+import { useRef, useState } from "react";
 
 export default function Home() {
+  const images = [
+    "/img/1.png",
+    "/img/2.png",
+    "/img/3.png",
+    "/img/4.png",
+    "/img/5.png",
+    "/img/6.png",
+    "/img/7.png",
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const startX = useRef<number | null>(null);
+  const isDragging = useRef(false);
+
+  const next = () => {
+    setCurrentIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prev = () => {
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const handleStart = (x: number) => {
+    startX.current = x;
+    isDragging.current = true;
+  };
+
+  const handleEnd = (x: number) => {
+    if (!isDragging.current || startX.current === null) return;
+
+    const diff = startX.current - x;
+    const threshold = 50;
+
+    if (diff > threshold) next();
+    else if (diff < -threshold) prev();
+
+    startX.current = null;
+    isDragging.current = false;
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="w-screen h-screen overflow-hidden bg-white dark:bg-black flex items-center justify-center">
+      <div className="relative w-full h-full flex items-center justify-center">
+        {/* Slider track */}
+        <div
+          className="w-full h-full overflow-hidden touch-pan-y"
+          onTouchStart={(e) => handleStart(e.touches[0].clientX)}
+          onTouchEnd={(e) => handleEnd(e.changedTouches[0].clientX)}
+          onMouseDown={(e) => handleStart(e.clientX)}
+          onMouseUp={(e) => handleEnd(e.clientX)}
+          onMouseLeave={(e) => {
+            if (isDragging.current) handleEnd(e.clientX);
+          }}
+        >
+          <div
+            className="flex h-full transition-transform duration-500 ease-in-out"
+            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            {images.map((src, index) => (
+              <div
+                key={index}
+                className="w-full h-full flex-shrink-0 flex items-center justify-center"
+              >
+                <img
+                  src={src}
+                  alt={`Image ${index + 1}`}
+                  className="max-w-full max-h-full object-contain select-none pointer-events-none"
+                  draggable={false}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Left button */}
+        <button
+          onClick={prev}
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/70 text-white w-14 h-14 text-3xl rounded-full shadow-lg active:scale-95 flex items-center justify-center"
+        >
+          ‹
+        </button>
+
+        {/* Right button */}
+        <button
+          onClick={next}
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/70 text-white w-14 h-14 text-3xl rounded-full shadow-lg active:scale-95 flex items-center justify-center"
+        >
+          ›
+        </button>
+
+        {/* Dots */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+          {images.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              className={`w-3 h-3 rounded-full transition-colors ${
+                index === currentIndex
+                  ? "bg-black dark:bg-white"
+                  : "bg-gray-400 dark:bg-gray-600"
+              }`}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          ))}
         </div>
-      </main>
+      </div>
     </div>
   );
 }
